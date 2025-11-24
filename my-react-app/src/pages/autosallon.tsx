@@ -1,13 +1,16 @@
+// src/pages/Autosallon.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import { api } from "../api";
 import type { Vehicle } from "../types";
 
-const AutoSallonPage: React.FC = () => {
+const Autosallon: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [searchBrand, setSearchBrand] = useState("");
+  const [searchModel, setSearchModel] = useState("");
   const [minPrice, setMinPrice] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState<string>("");
 
@@ -16,28 +19,21 @@ const AutoSallonPage: React.FC = () => {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError(null);
 
-      const params: any = {};
-      if (search.trim()) {
-        params.brand = search.trim();
-        params.model = search.trim();
-        // backend supports brand and model – we can call /vehicles/search
-      }
-      if (minPrice) params.minPrice = Number(minPrice);
-      if (maxPrice) params.maxPrice = Number(maxPrice);
+      const response = await api.get<Vehicle[]>("/vehicles/search", {
+        params: {
+          brand: searchBrand || undefined,
+          model: searchModel || undefined,
+          minPrice: minPrice || undefined,
+          maxPrice: maxPrice || undefined,
+        },
+      });
 
-      let res;
-      if (Object.keys(params).length > 0) {
-        res = await api.get<Vehicle[]>("/vehicles/search", { params });
-      } else {
-        res = await api.get<Vehicle[]>("/vehicles");
-      }
-
-      setVehicles(res.data);
+      setVehicles(response.data);
     } catch (err) {
       console.error(err);
-      setError("Failed to load vehicles.");
+      setError("Failed to load vehicles. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -45,118 +41,202 @@ const AutoSallonPage: React.FC = () => {
 
   useEffect(() => {
     fetchVehicles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchVehicles();
   };
 
-  const getFirstImage = (imageUrls?: string) => {
-    if (!imageUrls) return "";
-    const parts = imageUrls.split(",").map((s) => s.trim());
-    return parts[0] || "";
-  };
+  const formatPrice = (price: number) =>
+    price.toLocaleString("en-US", { style: "currency", currency: "EUR" });
 
   return (
-    <div className="page-container autosallon-page">
-      <h2 className="text-2xl font-bold mb-4">Available Vehicles</h2>
-
-      {/* Filters */}
-      <form
-        onSubmit={handleSearchSubmit}
-        className="mb-6 flex flex-wrap gap-3 items-end"
-      >
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Search brand/model</label>
-          <input
-            type="text"
-            className="border rounded px-3 py-2"
-            placeholder="BMW, Audi..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Min price (€)</label>
-          <input
-            type="number"
-            className="border rounded px-3 py-2"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-1">Max price (€)</label>
-          <input
-            type="number"
-            className="border rounded px-3 py-2"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded font-medium"
-        >
-          Filter
-        </button>
-      </form>
-
-      {loading && <p>Loading cars...</p>}
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-
-      {!loading && !error && vehicles.length === 0 && (
-        <p>No vehicles found. Try different filters.</p>
-      )}
-
-      {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {vehicles.map((v) => {
-          const img = getFirstImage(v.imageUrls);
-          return (
-            <div
-              key={v.id}
-              className="bg-white shadow rounded overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition"
-              onClick={() => navigate(`/vehicle/${v.id}`)}
-            >
-              {img ? (
-                <img
-                  src={img}
-                  alt={`${v.brand} ${v.model}`}
-                  className="h-40 w-full object-cover"
-                />
-              ) : (
-                <div className="h-40 w-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
-                  No image
-                </div>
-              )}
-
-              <div className="p-4 flex flex-col gap-1">
-                <h3 className="font-semibold text-lg">
-                  {v.brand} {v.model}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {v.year} • {v.mileage.toLocaleString()} km • {v.fuelType}
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-slate-900 text-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        {/* Hero */}
+        <section className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-blue-400 mb-2">
+                VirtuRide Autosallon
+              </p>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Find your next ride in seconds.
+              </h1>
+              <p className="text-gray-400 max-w-xl text-sm md:text-base">
+                Browse a curated collection of premium vehicles. Filter by brand,
+                model, and price to quickly find the perfect match.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <div className="px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/40 shadow-lg shadow-blue-500/20">
+                <p className="text-xs uppercase text-blue-300 mb-1">
+                  Vehicles online
                 </p>
-                <p className="font-bold text-blue-600 text-lg">
-                  € {v.price.toLocaleString()}
+                <p className="text-2xl font-semibold text-white">
+                  {vehicles.length}
                 </p>
-                {v.shortDescription && (
-                  <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-                    {v.shortDescription}
-                  </p>
-                )}
               </div>
             </div>
-          );
-        })}
+          </div>
+        </section>
+
+        {/* Filters */}
+        <section className="mb-8">
+          <form
+            onSubmit={handleSearch}
+            className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/70 rounded-2xl p-4 md:p-5 shadow-xl shadow-black/40"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1">
+                  Brand
+                </label>
+                <input
+                  type="text"
+                  value={searchBrand}
+                  onChange={(e) => setSearchBrand(e.target.value)}
+                  placeholder="Audi, BMW, Mercedes..."
+                  className="w-full rounded-lg bg-gray-800/80 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-300 mb-1">
+                  Model
+                </label>
+                <input
+                  type="text"
+                  value={searchModel}
+                  onChange={(e) => setSearchModel(e.target.value)}
+                  placeholder="A4, C-Class, Golf..."
+                  className="w-full rounded-lg bg-gray-800/80 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Min price (€)
+                  </label>
+                  <input
+                    type="number"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="w-full rounded-lg bg-gray-800/80 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Max price (€)
+                  </label>
+                  <input
+                    type="number"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="w-full rounded-lg bg-gray-800/80 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full md:w-auto inline-flex justify-center items-center rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold px-4 py-2.5 text-white shadow-lg shadow-blue-500/30 transition"
+              >
+                Search vehicles
+              </button>
+            </div>
+          </form>
+        </section>
+
+        {/* Vehicles grid */}
+        <section>
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="rounded-xl bg-red-500/10 border border-red-500/40 text-red-100 text-sm px-4 py-3">
+              {error}
+            </div>
+          ) : vehicles.length === 0 ? (
+            <div className="rounded-xl bg-gray-900/80 border border-gray-700/70 text-gray-300 text-sm px-4 py-6 text-center">
+              No vehicles match your filters. Try adjusting your search.
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {vehicles.map((v) => {
+                const img =
+                  v.imageUrls?.split(",")[0]?.trim() ||
+                  "https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg";
+
+                return (
+                  <div
+                    key={v.id}
+                    className="group bg-gray-900/80 border border-gray-800 rounded-2xl overflow-hidden shadow-xl shadow-black/40 hover:shadow-blue-500/40 hover:-translate-y-1 transition-transform"
+                  >
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={img}
+                        alt={`${v.brand} ${v.model}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0" />
+                      <div className="absolute bottom-3 left-3 text-xs px-3 py-1 rounded-full bg-black/60 text-gray-100 border border-white/10">
+                        {v.year} • {v.mileage.toLocaleString()} km
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-blue-400 mb-1">
+                            {v.brand}
+                          </p>
+                          <h2 className="text-base font-semibold text-white">
+                            {v.model}
+                          </h2>
+                          {v.branch && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {v.branch.city} • {v.branch.name}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-green-400">
+                          {formatPrice(v.price)}
+                        </p>
+                      </div>
+                      {v.shortDescription && (
+                        <p className="text-xs text-gray-400 line-clamp-2">
+                          {v.shortDescription}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex gap-2 text-[11px] text-gray-400">
+                          <span className="px-2 py-1 rounded-full bg-gray-800/70">
+                            {v.fuelType}
+                          </span>
+                          {v.transmission && (
+                            <span className="px-2 py-1 rounded-full bg-gray-800/70">
+                              {v.transmission}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => navigate(`/vehicle/${v.id}`)}
+                          className="text-xs font-semibold text-blue-400 hover:text-blue-300"
+                        >
+                          View details →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
 };
 
-export default AutoSallonPage;
+export default Autosallon;

@@ -2126,11 +2126,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\taula\\OneDrive\\Desktop\\CS50-Project\\VirtuRideAPI\\VirtuRideAPI.csproj",
+      "projectUniqueName": "C:\\Users\\taula\\OneDrive\\Documents\\GitHub\\CS50-project\\VirtuRideAPI\\VirtuRideAPI.csproj",
       "projectName": "VirtuRideAPI",
-      "projectPath": "C:\\Users\\taula\\OneDrive\\Desktop\\CS50-Project\\VirtuRideAPI\\VirtuRideAPI.csproj",
+      "projectPath": "C:\\Users\\taula\\OneDrive\\Documents\\GitHub\\CS50-project\\VirtuRideAPI\\VirtuRideAPI.csproj",
       "packagesPath": "C:\\Users\\taula\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\taula\\OneDrive\\Desktop\\CS50-Project\\VirtuRideAPI\\obj\\",
+      "outputPath": "C:\\Users\\taula\\OneDrive\\Documents\\GitHub\\CS50-project\\VirtuRideAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

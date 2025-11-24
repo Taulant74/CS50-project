@@ -1,3 +1,5 @@
+// src/types.ts
+
 export interface Branch {
   id: number;
   name: string;
@@ -15,39 +17,33 @@ export interface Vehicle {
   mileage: number;
   price: number;
   fuelType: string;
-  transmission?: string;
-  color?: string;
-  shortDescription?: string;
-  description?: string;
-  imageUrls?: string; // comma-separated URLs, we'll split in frontend
+  transmission?: string | null;
+  color?: string | null;
+  shortDescription?: string | null;
+  description?: string | null;
+  imageUrls?: string | null;
   createdAt: string;
   branch?: Branch | null;
 }
 
 export interface Inquiry {
-  id?: number;
+  id: number;
   vehicleId: number;
   userId?: number | null;
   name: string;
   email: string;
   message: string;
-  status?: string;
-  createdAt?: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface TestDrive {
-  id?: number;
+  id: number;
   vehicleId: number;
   userId: number;
-  preferredDate: string; // "2025-11-22"
-  preferredTime: string; // "14:30:00"
-  status?: string;
-  notes?: string;
-  createdAt?: string;
-}
-
-export interface Favorite {
-  userId: number;
-  vehicleId: number;
-  createdAt?: string;
+  preferredDate: string;
+  preferredTime: string;
+  status: string;
+  notes?: string | null;
+  createdAt: string;
 }

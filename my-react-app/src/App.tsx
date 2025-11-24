@@ -5,36 +5,34 @@ import VehicleDetailsPage from "./pages/VehicleDetailsPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import TestDrivePage from "./pages/TestDrivePage";
 import InquiryPage from "./pages/InquiryPage";
+import LoginPage from "./pages/LoginPage";
 
 const App: React.FC = () => {
   return (
     <>
-      <header className="site-header">
-        <div className="page-container">
-          <div className="brand">
-            <div className="mark" />
-            <h1 className="brand-title">VirtuRide</h1>
-          </div>
-
-          <nav className="nav-links">
-            <Link to="/" className="nav-link">
-              Home
-            </Link>
-            <Link to="/favorites" className="nav-link">
-              Favorites
-            </Link>
-            <Link to="/" className="btn btn-outline">Sell Your Car</Link>
-          </nav>
-        </div>
+      <header className="p-4 bg-gray-900 text-white flex justify-between items-center">
+        <h1 className="text-xl font-bold">VirtuRide</h1>
+        <nav className="flex gap-4 text-sm">
+          <Link to="/" className="hover:underline">
+            Home
+          </Link>
+          <Link to="/favorites" className="hover:underline">
+            Favorites
+          </Link>
+          <Link to="/login" className="hover:underline">
+            Login
+          </Link>
+        </nav>
       </header>
 
-      <main>
+      <main className="p-4 bg-gray-100 min-h-screen">
         <Routes>
           <Route path="/" element={<Autosallon />} />
           <Route path="/vehicle/:id" element={<VehicleDetailsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/test-drive/:vehicleId" element={<TestDrivePage />} />
           <Route path="/inquiry/:vehicleId" element={<InquiryPage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Routes>
       </main>
     </>

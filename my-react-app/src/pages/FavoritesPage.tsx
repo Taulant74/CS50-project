@@ -1,104 +1,98 @@
-import React, { useEffect, useState } from "react";
+// src/pages/FavoritesPage.tsx
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
 import type { Vehicle } from "../types";
 
-const MOCK_USER_ID = 1;
-
 const FavoritesPage: React.FC = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
   const navigate = useNavigate();
 
-  const fetchFavorites = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const res = await api.get<Vehicle[]>(`/favorites/user/${MOCK_USER_ID}`);
-      setVehicles(res.data);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load favorites.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // TODO: Replace with real call to /api/favorites/user/{id}
+  const favorites: Vehicle[] = [];
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const getFirstImage = (imageUrls?: string) => {
-    if (!imageUrls) return "";
-    const parts = imageUrls.split(",").map((s) => s.trim());
-    return parts[0] || "";
-  };
-
-  const handleRemove = async (vehicleId: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await api.delete("/favorites", {
-        params: { userId: MOCK_USER_ID, vehicleId },
-      });
-      setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to remove favorite.");
-    }
-  };
-
-  if (loading) return <p>Loading favorites...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  const hasFavorites = favorites.length > 0;
 
   return (
-    <div className="page-container favorites-page">
-      <h2 className="text-2xl font-bold mb-4">My Favorites</h2>
+    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-950 text-gray-50">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Your favorites</h1>
+            <p className="text-xs text-gray-400 mt-1">
+              Save vehicles you love and come back to them anytime.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="text-xs text-blue-300 hover:text-blue-200"
+          >
+            ← Browse more vehicles
+          </button>
+        </div>
 
-      {vehicles.length === 0 && <p>No favorites yet.</p>}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {vehicles.map((v) => {
-          const img = getFirstImage(v.imageUrls);
-          return (
-            <div
-              key={v.id}
-              className="bg-white shadow rounded overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition"
-              onClick={() => navigate(`/vehicle/${v.id}`)}
+        {!hasFavorites ? (
+          <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-10 text-center">
+            <p className="text-sm text-gray-300 mb-3">
+              You haven&apos;t added any favorites yet.
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Tap the ♥ button on a vehicle to add it here.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold"
             >
-              {img ? (
-                <img
-                  src={img}
-                  alt={`${v.brand} ${v.model}`}
-                  className="h-40 w-full object-cover"
-                />
-              ) : (
-                <div className="h-40 w-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
-                  No image
-                </div>
-              )}
+              Browse vehicles
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            {favorites.map((vehicle) => {
+              const img =
+                vehicle.imageUrls
+                  ?.split(",")[0]
+                  ?.trim() ||
+                "https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg";
 
-              <div className="p-4 flex flex-col gap-1">
-                <h3 className="font-semibold text-lg">
-                  {v.brand} {v.model}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {v.year} • {v.mileage.toLocaleString()} km
-                </p>
-                <p className="font-bold text-blue-600 text-lg">
-                  € {v.price.toLocaleString()}
-                </p>
-
-                <button
-                  onClick={(e) => handleRemove(v.id, e)}
-                  className="mt-3 text-xs text-red-600 hover:underline self-start"
+              return (
+                <div
+                  key={vehicle.id}
+                  className="group bg-gray-900/80 border border-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer"
+                  onClick={() => navigate(`/vehicle/${vehicle.id}`)}
                 >
-                  Remove from favorites
-                </button>
-              </div>
-            </div>
-          );
-        })}
+                  <div className="h-40 overflow-hidden relative">
+                    <img
+                      src={img}
+                      alt={`${vehicle.brand} ${vehicle.model}`}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <span className="absolute top-3 right-3 text-lg text-red-400">
+                      ♥
+                    </span>
+                  </div>
+                  <div className="p-4 space-y-1">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-semibold text-gray-100">
+                        {vehicle.brand} {vehicle.model}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {vehicle.year}
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-blue-400">
+                      € {vehicle.price.toLocaleString("de-DE")}
+                    </p>
+                    <p className="text-[11px] text-gray-400">
+                      {vehicle.mileage.toLocaleString("de-DE")} km •{" "}
+                      {vehicle.fuelType} • {vehicle.transmission}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
