@@ -11,7 +11,11 @@ interface LoginResponse {
   role: string;
 }
 
-const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  setIsLoggedIn: (value: boolean) => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ setIsLoggedIn }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,7 +32,9 @@ const LoginPage: React.FC = () => {
     setError(null);
 
     if (!email || !password) {
-      setError("Please fill in both email and password.");
+      const msg = "Please fill in both email and password.";
+      setError(msg);
+      alert(msg); // ❗ alert on failure (empty fields)
       return;
     }
 
@@ -42,9 +48,11 @@ const LoginPage: React.FC = () => {
 
       const data = response.data;
 
-      localStorage.setItem("vr_token", data.token);
+      // Store auth in localStorage
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId.toString());
       localStorage.setItem(
-        "vr_user",
+        "user",
         JSON.stringify({
           id: data.userId,
           fullName: data.fullName,
@@ -53,6 +61,12 @@ const LoginPage: React.FC = () => {
         })
       );
 
+      // Tell App that login is successful
+      setIsLoggedIn(true);
+
+      // Alert on success ✅
+      alert("Login successful!");
+
       if (data.role === "Admin") {
         navigate("/admin", { replace: true });
       } else {
@@ -60,10 +74,15 @@ const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Login error:", err);
+
       if (err.response?.status === 401) {
-        setError("Invalid email or password.");
+        const msg = "Invalid email or password.";
+        setError(msg);
+        alert("Login failed: Invalid email or password."); // ❗ alert on failure
       } else {
-        setError("Something went wrong. Please try again.");
+        const msg = "Something went wrong. Please try again.";
+        setError(msg);
+        alert("Login failed. Please try again."); // ❗ alert on failure
       }
     } finally {
       setLoading(false);
@@ -77,9 +96,7 @@ const LoginPage: React.FC = () => {
           <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
             VIRTURIDE
           </p>
-          <h1 className="text-3xl font-bold text-white">
-            Welcome back
-          </h1>
+          <h1 className="text-3xl font-bold text-white">Welcome back</h1>
           <p className="text-xs text-gray-400 mt-1">
             Sign in to manage vehicles, test drives, and inquiries.
           </p>
@@ -145,7 +162,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           <p className="mt-4 text-[11px] text-gray-500 text-center">
-            For demo, log in with your seeded test user from the database.
+            Use one of your existing VirtuRide accounts to sign in.
           </p>
         </div>
       </div>

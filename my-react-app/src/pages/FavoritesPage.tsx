@@ -1,13 +1,55 @@
 // src/pages/FavoritesPage.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Vehicle } from "../types";
+import { api } from "../api";
 
 const FavoritesPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // TODO: Replace with real call to /api/favorites/user/{id}
-  const favorites: Vehicle[] = [];
+  const [favorites, setFavorites] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem("token");
+        const storedUserId = localStorage.getItem("userId");
+
+        if (!token || !storedUserId) {
+          setError("You must be logged in to view favorites.");
+          setLoading(false);
+          return;
+        }
+
+        const userId = parseInt(storedUserId, 10);
+        if (!userId || Number.isNaN(userId)) {
+          setError("Invalid user session. Please log in again.");
+          setLoading(false);
+          return;
+        }
+
+        const res = await api.get<Vehicle[]>(`/favorites/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setFavorites(res.data ?? []);
+      } catch (err) {
+        console.error("Failed to load favorites:", err);
+        setError("Failed to load favorites. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
 
   const hasFavorites = favorites.length > 0;
 
@@ -30,7 +72,23 @@ const FavoritesPage: React.FC = () => {
           </button>
         </div>
 
-        {!hasFavorites ? (
+        {/* Loading / error states */}
+        {loading && (
+          <div className="flex justify-center py-10">
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-7 h-7 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-gray-400">Loading your favorites...</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="bg-red-500/10 border border-red-500/40 rounded-2xl p-4 text-sm text-red-200">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && !hasFavorites && (
           <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-10 text-center">
             <p className="text-sm text-gray-300 mb-3">
               You haven&apos;t added any favorites yet.
@@ -46,13 +104,13 @@ const FavoritesPage: React.FC = () => {
               Browse vehicles
             </button>
           </div>
-        ) : (
+        )}
+
+        {!loading && !error && hasFavorites && (
           <div className="grid gap-5 md:grid-cols-2">
             {favorites.map((vehicle) => {
               const img =
-                vehicle.imageUrls
-                  ?.split(",")[0]
-                  ?.trim() ||
+                vehicle.imageUrls?.split(",")[0]?.trim() ||
                 "https://images.pexels.com/photos/210019/pexels-photo-210019.jpeg";
 
               return (
@@ -67,7 +125,7 @@ const FavoritesPage: React.FC = () => {
                       alt={`${vehicle.brand} ${vehicle.model}`}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                    <span className="absolute top-3 right-3 text-lg text-red-400">
+                    <span className="absolute top-3 right-3 text-lg text-red-400 drop-shadow">
                       ♥
                     </span>
                   </div>
@@ -76,9 +134,7 @@ const FavoritesPage: React.FC = () => {
                       <p className="text-sm font-semibold text-gray-100">
                         {vehicle.brand} {vehicle.model}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        {vehicle.year}
-                      </p>
+                      <p className="text-xs text-gray-400">{vehicle.year}</p>
                     </div>
                     <p className="text-sm font-semibold text-blue-400">
                       € {vehicle.price.toLocaleString("de-DE")}

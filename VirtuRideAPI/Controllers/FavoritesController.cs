@@ -17,7 +17,21 @@ namespace VirtuRideAPI.Controllers
             _context = context;
         }
 
-        // GET: api/favorites/user/1  -> list of favorite vehicles for a user
+        // GET: api/favorites  -> list of ALL favorites (for admin dashboard)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Favorite>>> GetAll()
+        {
+            var favorites = await _context.Favorites
+                .Include(f => f.User)
+                .Include(f => f.Vehicle)
+                    .ThenInclude(v => v.Branch)
+                .OrderByDescending(f => f.CreatedAt)
+                .ToListAsync();
+
+            return favorites;
+        }
+
+        // GET: api/favorites/user/1  -> list of favorite vehicles for a user (frontend user)
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<Vehicle>>> GetUserFavorites(int userId)
         {

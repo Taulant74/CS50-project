@@ -1,6 +1,7 @@
 // src/pages/TestDrivePage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { api } from "../api"; // axios instance with baseURL https://localhost:7224/api
 
 const TestDrivePage: React.FC = () => {
   const { vehicleId } = useParams();
@@ -11,19 +12,73 @@ const TestDrivePage: React.FC = () => {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    if (!token || !userId) {
+      // extra safety: redirect if opened directly
+      navigate("/login", { state: { from: `/test-drive/${vehicleId}` } });
+    }
+  }, [navigate, vehicleId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || !time) return;
-
-    setSubmitting(true);
+    setErrorMsg(null);
     setSuccess(false);
 
+    if (!vehicleId) {
+      setErrorMsg("Invalid vehicle ID in URL.");
+      return;
+    }
+
+    if (!date || !time) {
+      setErrorMsg("Please select both date and time.");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    const storedUserId = localStorage.getItem("userId");
+    const userId = storedUserId ? parseInt(storedUserId, 10) : 0;
+
+    if (!token || !userId || Number.isNaN(userId)) {
+      setErrorMsg("You must be logged in to book a test drive.");
+      navigate("/login", { state: { from: `/test-drive/${vehicleId}` } });
+      return;
+    }
+
+    const payload = {
+      vehicleId: Number(vehicleId),
+      userId: userId,
+      preferredDate: date, // "2025-11-29"
+      preferredTime: time, // "10:00"
+      notes: notes || null,
+    };
+
     try {
-      // Replace with real POST to /api/testdrives
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      setSubmitting(true);
+
+      await api.post("/testdrives", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       setSuccess(true);
       setNotes("");
+      // keep date/time so they see what they submitted
+    } catch (err: any) {
+      console.error("Test drive request failed:", err);
+      const backendMsg =
+        err?.response?.data?.title ||
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Failed to submit test drive. Please try again.";
+      setErrorMsg(
+        typeof backendMsg === "string" ? backendMsg : "Something went wrong."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -100,6 +155,12 @@ const TestDrivePage: React.FC = () => {
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+
+          {errorMsg && (
+            <div className="rounded-lg bg-red-500/10 border border-red-500/60 text-red-200 text-xs px-3 py-2">
+              {errorMsg}
+            </div>
+          )}
 
           {success && (
             <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/60 text-emerald-200 text-xs px-3 py-2">
